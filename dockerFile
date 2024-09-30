@@ -1,0 +1,46 @@
+# Use an official PHP runtime as a parent image
+FROM php:8.1-fpm
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    libicu-dev \
+    libssl-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    pkg-config \
+    libzip-dev \
+    zip \
+    unzip \
+    gettext \
+    libgmp-dev \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install intl \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd \
+    && docker-php-ext-install pdo_mysql \
+    && docker-php-ext-install zip \
+    && docker-php-ext-install opcache \
+    && docker-php-ext-install gettext \
+    && docker-php-ext-enable gettext \
+    && docker-php-ext-install gmp
+
+# Cài đặt Redis extension qua PECL
+RUN pecl install redis \
+    && docker-php-ext-enable redis
+
+# Cài đặt MongoDB extension qua PECL
+RUN pecl install mongodb \
+    && docker-php-ext-enable mongodb
+    
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Set working directory
+WORKDIR /var/www/html
+
+# Copy existing application directory contents
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Expose port 9000 and start php-fpm server
+EXPOSE 9000
+CMD ["php-fpm"]
